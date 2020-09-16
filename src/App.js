@@ -53,7 +53,9 @@ class App extends React.Component {
   };
 
   handleRecorderStopped = async () => {
-    const audioBlob = new Blob(this.audioChunks);
+    const audioBlob = new Blob(this.audioChunks, {
+      type: "audio/wav; codecs=0",
+    });
 
     // render audio player as user message
     const audioUrl = URL.createObjectURL(audioBlob);
@@ -65,6 +67,7 @@ class App extends React.Component {
 
     // sender the audio blob to server
     let formData = new FormData();
+    formData.append("name", "webAudioBlob");
     formData.append("file", audioBlob);
 
     try {
