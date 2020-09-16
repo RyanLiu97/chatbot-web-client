@@ -13,7 +13,8 @@ import {
 import "react-chat-widget/lib/styles.css";
 import "./App.css";
 
-const BASE_URL = "/message";
+const MESSAGE_URL = "/message";
+const AUDIO_URL = "/audio";
 
 class AudioComponent extends React.Component {
   render() {
@@ -36,7 +37,7 @@ class App extends React.Component {
   handleNewUserMessage = async (text) => {
     toggleMsgLoader();
     try {
-      const response = await axios.post(BASE_URL, {
+      const response = await axios.post(MESSAGE_URL, {
         sender: "web",
         message: text,
       });
@@ -48,6 +49,37 @@ class App extends React.Component {
     } catch (e) {
       console.log(e.toString());
     }
+    toggleMsgLoader();
+  };
+
+  handleRecorderStopped = async () => {
+    const audioBlob = new Blob(this.audioChunks);
+
+    // render audio player as user message
+    const audioUrl = URL.createObjectURL(audioBlob);
+    renderCustomComponent(AudioComponent, {
+      src: audioUrl,
+      isUserAudio: true,
+    });
+    toggleMsgLoader();
+
+    // sender the audio blob to server
+    let formData = new FormData();
+    formData.append("file", audioBlob);
+
+    try {
+      const response = await axios.post(AUDIO_URL, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      const { data } = response;
+      addResponseMessage(data.text);
+    } catch (e) {
+      console.log(e.toString());
+    }
+
     toggleMsgLoader();
   };
 
@@ -84,15 +116,8 @@ class App extends React.Component {
             this.audioChunks.push(event.data);
           });
 
-          // use collected data to form a blob object and play it
-          this.recorder.addEventListener("stop", async () => {
-            const audioBlob = new Blob(this.audioChunks);
-            const audioUrl = URL.createObjectURL(audioBlob);
-            renderCustomComponent(AudioComponent, {
-              src: audioUrl,
-              isUserAudio: true,
-            });
-          });
+          // do something when recorder is stopped
+          this.recorder.addEventListener("stop", this.handleRecorderStopped);
         } else {
           this.setState({ recording: false });
           setQuickButtons([{ label: "RECORD", value: 1 }]);
