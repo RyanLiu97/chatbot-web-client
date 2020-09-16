@@ -1,0 +1,22 @@
+.rcw-widget-container {
+    position: initial;
+    margin: auto;
+    max-width: 500px;
+}
+
+.rcw-launcher {
+    display: none;
+}
+
+.rcw-close-button {
+    display: none !important;
+}
+
+.bd-red {
+    border-color: red !important;
+}
+
+.user-audio {
+    margin-left: auto;
+}
+
