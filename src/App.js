@@ -43,8 +43,14 @@ class App extends React.Component {
       });
 
       response.data.forEach((item) => {
-        const { text } = item;
+        const { text, attachment } = item;
+
+        // text response
         if (text) addResponseMessage(text);
+
+        // attachment response, refers to music url
+        if (attachment)
+          renderCustomComponent(AudioComponent, { src: attachment }, true);
       });
     } catch (e) {
       console.log(e.toString());
