@@ -2,19 +2,38 @@ import React from "react";
 import axios from "axios";
 
 import {
-  Widget,
-  toggleWidget,
-  renderCustomComponent,
   addResponseMessage,
+  renderCustomComponent,
   setQuickButtons,
-  addLinkSnippet,
   toggleMsgLoader,
+  toggleWidget,
+  Widget,
 } from "react-chat-widget";
 import "react-chat-widget/lib/styles.css";
 import "./App.css";
 
 const MESSAGE_URL = "/message";
 const AUDIO_URL = "/audio";
+const MESSAGE2AUDIO_URL = "/message2audio";
+
+const b64toBlob = (b64Data, contentType = "", sliceSize = 512) => {
+  const byteCharacters = atob(b64Data);
+  const byteArrays = [];
+
+  for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+    const slice = byteCharacters.slice(offset, offset + sliceSize);
+
+    const byteNumbers = new Array(slice.length);
+    for (let i = 0; i < slice.length; i++) {
+      byteNumbers[i] = slice.charCodeAt(i);
+    }
+
+    const byteArray = new Uint8Array(byteNumbers);
+    byteArrays.push(byteArray);
+  }
+
+  return new Blob(byteArrays, { type: contentType });
+};
 
 class AudioComponent extends React.Component {
   render() {
@@ -34,23 +53,35 @@ class App extends React.Component {
   recorder = undefined;
   audioChunks = [];
 
+  renderAudioMessage = (src, isUserAudio = false) => {
+    renderCustomComponent(AudioComponent, { src, isUserAudio }, !isUserAudio);
+  };
+
   handleNewUserMessage = async (text) => {
     toggleMsgLoader();
     try {
-      const response = await axios.post(MESSAGE_URL, {
+      const response = await axios.post(MESSAGE2AUDIO_URL, {
         sender: "web",
         message: text,
       });
 
+      console.log(response);
+
       response.data.forEach((item) => {
-        const { text, attachment } = item;
+        const { text, attachment, attachment_base64 } = item;
 
         // text response
         if (text) addResponseMessage(text);
 
         // attachment response, refers to music url
-        if (attachment)
-          renderCustomComponent(AudioComponent, { src: attachment }, true);
+        if (attachment) this.renderAudioMessage(attachment);
+
+        // base64 attachment response, refers to wav file from server
+        if (attachment_base64) {
+          const blob = b64toBlob(attachment_base64, "audio/wav");
+          const blobUrl = URL.createObjectURL(blob);
+          this.renderAudioMessage(blobUrl);
+        }
       });
     } catch (e) {
       console.log(e.toString());
@@ -65,10 +96,7 @@ class App extends React.Component {
 
     // render audio player as user message
     const audioUrl = URL.createObjectURL(audioBlob);
-    renderCustomComponent(AudioComponent, {
-      src: audioUrl,
-      isUserAudio: true,
-    });
+    this.renderAudioMessage(audioUrl, true);
     toggleMsgLoader();
 
     // sender the audio blob to server
@@ -142,26 +170,18 @@ class App extends React.Component {
 
   componentDidMount() {
     toggleWidget();
-    renderCustomComponent(
-      AudioComponent,
-      {
-        src: "http://music.163.com/song/media/outer/url?id=1404885266.mp3",
-      },
-      true
+    this.renderAudioMessage(
+      "http://music.163.com/song/media/outer/url?id=1404885266.mp3"
     );
-    addResponseMessage("Hello motherfucker");
+    addResponseMessage("Hello, this is rasa bot");
     setQuickButtons([{ label: "RECORD", value: 1 }]);
-    addLinkSnippet({
-      title: "My awesome link",
-      link: "https://github.com/Wolox/react-chat-widget",
-      target: "_blank",
-    });
   }
 
   render() {
     return (
       <Widget
-        title="Hello MotherFucker"
+        title="Hello World"
+        subtitle="music playing and weather querying"
         profileAvatar="/images/robot.png"
         handleNewUserMessage={this.handleNewUserMessage}
         handleQuickButtonClicked={this.handleQuickButtonClicked}
