@@ -60,7 +60,7 @@ class App extends React.Component {
   handleNewUserMessage = async (text) => {
     toggleMsgLoader();
     try {
-      const response = await axios.post(MESSAGE2AUDIO_URL, {
+      const response = await axios.post(MESSAGE_URL, {
         sender: "web",
         message: text,
       });
@@ -111,8 +111,24 @@ class App extends React.Component {
         },
       });
 
-      const { data } = response;
-      addResponseMessage(data.text);
+      console.log(response);
+
+      response.data.forEach((item) => {
+        const { text, attachment, audio } = item;
+
+        // text response
+        if (text) addResponseMessage(text);
+
+        // attachment response, refers to music url
+        if (attachment) this.renderAudioMessage(attachment);
+
+        // base64 attachment response, refers to wav file from server
+        if (audio) {
+          const blob = b64toBlob(audio, "audio/wav");
+          const blobUrl = URL.createObjectURL(blob);
+          this.renderAudioMessage(blobUrl);
+        }
+      });
     } catch (e) {
       console.log(e.toString());
     }
