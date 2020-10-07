@@ -23,3 +23,40 @@
 .aplayer {
     width: 100%;
 }
+
+.attach-button {
+    margin-left: 10px;
+    margin-top: auto;
+    margin-bottom: auto;
+    height: 30px;
+    width: 30px;
+    background-color: rgb(241, 243, 244);
+    border-radius: 50%;
+    border-style: solid;
+    border-color: #b5b5b5;
+    border-width: 2px;
+    text-align: center;
+    display: flex;
+    display: -webkit-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.stop {
+    margin-left: auto;
+    margin-right: auto;
+    background-color: rgb(50, 50, 50);
+    height: 12px;
+    width: 12px;
+    border-radius: 15%;
+}
+
+.play {
+    margin-left: 10px;
+    margin-right: auto;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 7px 0 7px 12px;
+    border-color: transparent transparent transparent rgb(50, 50, 50);
+}

@@ -17,7 +17,7 @@ const MESSAGE_URL = "/message";
 const AUDIO_URL = "/audio";
 const MESSAGE2AUDIO_URL = "/message2audio";
 
-const MUSIC_URL = "http://music.163.com/song/media/outer/url?id=4937752.mp3";
+const MUSIC_URL = "http://music.163.com/song/media/outer/url?id=1318234987.mp3";
 
 const b64toBlob = (b64Data, contentType = "", sliceSize = 512) => {
   const byteCharacters = atob(b64Data);
@@ -52,18 +52,52 @@ class AudioComponent extends React.Component {
 }
 
 class MixedComponent extends React.Component {
+  state = { isPlaying: false };
+  constructor(props) {
+    super(props);
+    this.ref = React.createRef();
+  }
+
+  handleButtonClicked = () => {
+    const audio = this.ref.current;
+
+    if (this.state.isPlaying) {
+      audio.pause();
+      audio.currentTime = 0;
+    } else {
+      audio.play();
+    }
+  };
+
   render() {
     return (
-      <div className="rcw-response">
-        <div className="rcw-message-text">
-          <p>{this.props.text}</p>
+      <>
+        <div className="rcw-response">
+          <div className="rcw-message-text">
+            <p>{this.props.text}</p>
+          </div>
+          {this.props.src ? (
+            <audio
+              ref={this.ref}
+              className="not-played"
+              preload="preload"
+              onPlay={() => {
+                this.setState({ isPlaying: true });
+              }}
+              onPause={() => {
+                this.setState({ isPlaying: false });
+              }}
+            >
+              <source src={this.props.src} />
+            </audio>
+          ) : undefined}
         </div>
         {this.props.src ? (
-          <audio className="not-played" controls="controls" preload="preload">
-            <source src={this.props.src} />
-          </audio>
+          <div className="attach-button" onClick={this.handleButtonClicked}>
+            <div className={this.state.isPlaying ? "stop" : "play"} />
+          </div>
         ) : undefined}
-      </div>
+      </>
     );
   }
 }
