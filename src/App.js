@@ -17,6 +17,8 @@ const MESSAGE_URL = "/message";
 const AUDIO_URL = "/audio";
 const MESSAGE2AUDIO_URL = "/message2audio";
 
+const MUSIC_URL = "http://music.163.com/song/media/outer/url?id=1404885266.mp3" 
+
 const b64toBlob = (b64Data, contentType = "", sliceSize = 512) => {
   const byteCharacters = atob(b64Data);
   const byteArrays = [];
@@ -46,6 +48,26 @@ class AudioComponent extends React.Component {
         <source src={this.props.src} />
       </audio>
     );
+  }
+}
+
+class MixedComponent extends React.Component {
+  constructor(props) {
+     super(props);
+     this.ref = React.createRef();
+  }
+
+  render() {
+    return (
+      <div className="rcw-response">
+        <div className="rcw-message-text">
+          <p ref={this.ref}>Hello, motherfucker</p>
+        </div>
+        <audio controls="controls" preload="preload" >
+          <source src={this.props.src} />
+        </audio>
+      </div>
+    )
   }
 }
 
@@ -195,7 +217,7 @@ class App extends React.Component {
   componentDidMount() {
     toggleWidget();
     this.renderAudioMessage(
-      "http://music.163.com/song/media/outer/url?id=1404885266.mp3"
+      MUSIC_URL
     );
     addResponseMessage("Hello, this is rasa bot");
     setQuickButtons([{ label: "RECORD", value: 1 }]);
@@ -206,7 +228,8 @@ class App extends React.Component {
           url: "http://music.163.com/song/media/outer/url?id=1404885266.mp3",
           cover: "https://bkimg.cdn.bcebos.com/pic/c9fcc3cec3fdfc0386587feedb3f8794a4c22647?x-bce-process=image/resize,m_lfit,w_268,limit_1/format,f_jpg"
       }
-    }, true)
+    }, true);
+    renderCustomComponent(MixedComponent, {src: MUSIC_URL}, true)
   }
 
   render() {
