@@ -1,5 +1,6 @@
 import React from "react";
 import axios from "axios";
+import ReactAplayer from "react-aplayer";
 
 import {
   addResponseMessage,
@@ -198,6 +199,14 @@ class App extends React.Component {
     );
     addResponseMessage("Hello, this is rasa bot");
     setQuickButtons([{ label: "RECORD", value: 1 }]);
+    renderCustomComponent(ReactAplayer, {
+      audio: {
+          name: "下山",
+          artist: "要不要买菜",
+          url: "http://music.163.com/song/media/outer/url?id=1404885266.mp3",
+          cover: "https://bkimg.cdn.bcebos.com/pic/c9fcc3cec3fdfc0386587feedb3f8794a4c22647?x-bce-process=image/resize,m_lfit,w_268,limit_1/format,f_jpg"
+      }
+    }, true)
   }
 
   render() {
