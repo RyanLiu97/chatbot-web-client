@@ -176,6 +176,7 @@ class App extends React.Component {
     toggleMsgLoader();
   };
 
+  // send the whole chunk after stop recording
   handleRecorderStopped = async () => {
     const audioBlob = new Blob(this.audioChunks, {
       type: "audio/wav; codecs=0",
@@ -223,6 +224,16 @@ class App extends React.Component {
     toggleMsgLoader();
   };
 
+  // send the chunks every interval
+  handleRecorderStream = (e) => {
+    console.log(e);
+    if (this.webSocket.readyState === this.webSocket.OPEN) {
+      const blob = new Blob(this.audioChunks, { type: "audio/wav" });
+      this.webSocket.send(blob);
+      this.audioChunks = [];
+    }
+  };
+
   handleQuickButtonClicked = async (value) => {
     switch (value) {
       // value === 0: "stop" button clicked
@@ -231,9 +242,17 @@ class App extends React.Component {
         if (this.state.recording) {
           this.recorder.stop();
         }
+        // clear the interval
+        clearInterval(this.intervalId);
+        // close the webSocket
+        if (this.webSocket.readyState !== this.webSocket.OPEN) {
+          this.webSocket.close();
+        }
+
         this.setState({ recording: false });
         setQuickButtons([{ label: "RECORD", value: 1 }]);
         break;
+
       // value === 1: "record" button clicked
       case 1:
         // if not recording, start to record voice
@@ -243,9 +262,7 @@ class App extends React.Component {
           });
 
           this.recorder = new MediaRecorder(stream);
-          this.recorder.start();
 
-          this.setState({ recording: true });
           setQuickButtons([{ label: "STOP", value: 0 }]);
           document.getElementsByClassName("quick-button")[0].className =
             "quick-button bd-red";
@@ -254,10 +271,31 @@ class App extends React.Component {
           this.audioChunks = [];
           this.recorder.addEventListener("dataavailable", (event) => {
             this.audioChunks.push(event.data);
+            console.log(
+              "WS state after available:",
+              this.webSocket.readyState === this.webSocket.OPEN
+            );
           });
 
-          // do something when recorder is stopped
-          this.recorder.addEventListener("stop", this.handleRecorderStopped);
+          // send the recorded data when recorder is stopped
+          this.recorder.addEventListener("stop", this.handleRecorderStream);
+
+          this.setState({ recording: true });
+
+          // initialize webSocket
+          this.webSocket = new WebSocket("ws://localhost:8000/ws");
+          this.webSocket.onmessage = (ev) => {
+            let msg = ev.data;
+            console.log("Ws receiving: ", msg);
+          };
+
+          this.recorder.start();
+
+          // send the data of recorder every 1000ms
+          this.intervalId = setInterval(() => {
+            this.recorder.stop();
+            this.recorder.start();
+          }, 1000);
         } else {
           this.setState({ recording: false });
           setQuickButtons([{ label: "RECORD", value: 1 }]);
