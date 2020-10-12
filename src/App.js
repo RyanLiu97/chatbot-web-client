@@ -243,12 +243,14 @@ class App extends React.Component {
         if (this.state.recording) {
           this.recorder.stop();
         }
+        /*
         // clear the interval
         clearInterval(this.intervalId);
         // close the webSocket
         if (this.webSocket.readyState !== this.webSocket.OPEN) {
           this.webSocket.close();
         }
+        */
 
         this.setState({ recording: false });
         setQuickButtons([{ label: "RECORD", value: 1 }]);
@@ -268,16 +270,25 @@ class App extends React.Component {
           document.getElementsByClassName("quick-button")[0].className =
             "quick-button bd-red";
 
+          this.setState({ recording: true });
+          this.recorder.start();
+
           // collect audio data into chunk
           this.audioChunks = [];
           this.recorder.addEventListener("dataavailable", (event) => {
             this.audioChunks.push(event.data);
+            /*
             console.log(
               "WS state after available:",
               this.webSocket.readyState === this.webSocket.OPEN
             );
+            */
           });
 
+          this.recorder.addEventListener("stop", this.handleRecorderStopped);
+
+          /*
+          // codes below are used to handle real time recognition, not finished yet
           // send the recorded data when recorder is stopped
           this.recorder.addEventListener("stop", this.handleRecorderStream);
 
@@ -297,6 +308,7 @@ class App extends React.Component {
             this.recorder.stop();
             this.recorder.start();
           }, 1000);
+          */
         } else {
           this.setState({ recording: false });
           setQuickButtons([{ label: "RECORD", value: 1 }]);
@@ -315,7 +327,6 @@ class App extends React.Component {
     /*
     this.renderAudioMessage(MUSIC_URL);
     addResponseMessage("Hello, this is rasa bot");
-    setQuickButtons([{ label: "RECORD", value: 1 }]);
     this.renderMusicPlayer();
     renderCustomComponent(
       MixedComponent,
@@ -323,6 +334,7 @@ class App extends React.Component {
       true
     );
     */
+    setQuickButtons([{ label: "RECORD", value: 1 }]);
     renderCustomComponent(
       MixedComponent,
       { text: "你好！有什么我能帮到你的吗？" },
