@@ -294,20 +294,20 @@ class App extends React.Component {
     // addResponseMessage("Hello, this is rasa bot");
     setQuickButtons([{ label: "RECORD", value: 1 }]);
 
-    renderCustomComponent(
-      MixedComponent,
-      { text: "hello", src: MUSIC_URL },
-      true
-    );
-    this.renderMusicPlayer();
+    // renderCustomComponent(
+    //   MixedComponent,
+    //   { text: "hello", src: MUSIC_URL },
+    //   true
+    // );
+    // this.renderMusicPlayer();
     renderCustomComponent(
       MixedComponent,
       { text: "你好！有什么可以帮到你吗？" },
       true
     );
-    setTimeout(() => {
-      this.playPlaylist();
-    }, 2000);
+    // setTimeout(() => {
+    //   this.playPlaylist();
+    // }, 2000);
   }
 
   render() {
