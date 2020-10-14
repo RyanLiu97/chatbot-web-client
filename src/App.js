@@ -126,10 +126,14 @@ class App extends React.Component {
 
   playPlaylist = () => {
     this.audioPlayList = [...document.getElementsByClassName("not-played")];
-    this.audioPlayList.push(this.ap);
 
     for (let audio of this.audioPlayList) {
       audio.onended = this.playFirstAudio;
+    }
+
+    if (this.ap) {
+      this.ap.onended = () => (this.ap = undefined);
+      this.audioPlayList.push(this.ap);
     }
 
     this.playFirstAudio();
@@ -233,6 +237,8 @@ class App extends React.Component {
         // attachment response, refers to music object
         if (attachment) this.renderMusicPlayer(attachment);
       });
+
+      this.playPlaylist();
     } catch (e) {
       console.log(e.toString());
     }
