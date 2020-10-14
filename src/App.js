@@ -3,7 +3,6 @@ import axios from "axios";
 import ReactAplayer from "react-aplayer";
 
 import {
-  addResponseMessage,
   renderCustomComponent,
   setQuickButtons,
   toggleMsgLoader,
@@ -102,6 +101,16 @@ class MixedComponent extends React.Component {
   }
 }
 
+class MusicPlayerComponent extends React.Component {
+  onInit = (ap) => {
+    this.props.getMusicPlayerInstance(ap);
+  };
+
+  render() {
+    return <ReactAplayer onInit={this.onInit} audio={this.props.audio} />;
+  }
+}
+
 class App extends React.Component {
   state = { recording: false };
   recorder = undefined;
@@ -117,6 +126,7 @@ class App extends React.Component {
 
   playPlaylist = () => {
     this.audioPlayList = [...document.getElementsByClassName("not-played")];
+    this.audioPlayList.push(this.ap);
 
     for (let audio of this.audioPlayList) {
       audio.onended = this.playFirstAudio;
@@ -138,7 +148,14 @@ class App extends React.Component {
         "https://bkimg.cdn.bcebos.com/pic/c9fcc3cec3fdfc0386587feedb3f8794a4c22647?x-bce-process=image/resize,m_lfit,w_268,limit_1/format,f_jpg",
     }
   ) => {
-    renderCustomComponent(ReactAplayer, { audio }, true);
+    renderCustomComponent(
+      MusicPlayerComponent,
+      {
+        audio,
+        getMusicPlayerInstance: (ap) => (this.ap = ap),
+      },
+      true
+    );
   };
 
   handleNewUserMessage = async (text) => {
@@ -275,14 +292,22 @@ class App extends React.Component {
     toggleWidget();
     // this.renderAudioMessage(MUSIC_URL);
     // addResponseMessage("Hello, this is rasa bot");
-    // this.renderMusicPlayer();
-    // renderCustomComponent(
-    //   MixedComponent,
-    //   { text: "hello", src: MUSIC_URL },
-    //   true
-    // );
     setQuickButtons([{ label: "RECORD", value: 1 }]);
-    renderCustomComponent(MixedComponent, { text: "你好！有什么可以帮到你吗？" }, true);
+
+    renderCustomComponent(
+      MixedComponent,
+      { text: "hello", src: MUSIC_URL },
+      true
+    );
+    this.renderMusicPlayer();
+    renderCustomComponent(
+      MixedComponent,
+      { text: "你好！有什么可以帮到你吗？" },
+      true
+    );
+    setTimeout(() => {
+      this.playPlaylist();
+    }, 2000);
   }
 
   render() {
