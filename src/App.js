@@ -15,6 +15,7 @@ import "./App.css";
 const MESSAGE_URL = "/message";
 const AUDIO_URL = "/audio";
 const MESSAGE2AUDIO_URL = "/message2audio";
+const WS_URL = "ws://localhost:8000/ws";
 
 const MUSIC_URL = "http://music.163.com/song/media/outer/url?id=1318234987.mp3";
 
@@ -112,9 +113,11 @@ class MusicPlayerComponent extends React.Component {
 }
 
 class App extends React.Component {
-  state = { recording: false };
+  state = { recording: false, listening: false };
   recorder = undefined;
   audioChunks = [];
+
+  ws = undefined;
 
   playFirstAudio = () => {
     const nextAudio = this.audioPlayList.shift();
@@ -246,16 +249,47 @@ class App extends React.Component {
     toggleMsgLoader();
   };
 
+  handleListenerDataAvailable = async (event) => {
+    this.audioChunks.push(event.data);
+
+    const chunk = [event.data];
+
+    const audioBlob = new Blob(chunk, {
+      type: "audio/wav; codecs=0",
+    });
+
+    // sender the audio blob to server
+    try {
+      this.ws.send(audioBlob);
+    } catch (e) {
+      console.log("Error in handleListenerDataAvailable: ", e.toString());
+    }
+  };
+
+  handleListenerStopped = async () => {
+    this.ws.close(1000, "Normally closed by program.");
+    const audioBlob = new Blob(this.audioChunks, {
+      type: "audio/wav; codecs=0",
+    });
+
+    // render audio player as user message
+    const audioUrl = URL.createObjectURL(audioBlob);
+    this.renderAudioMessage(audioUrl, true);
+  };
+
   handleQuickButtonClicked = async (value) => {
     switch (value) {
       // value === 0: "stop" button clicked
       case 0:
-        // if it is recording, stop it
-        if (this.state.recording) {
+        // if it is recording or listening, stop it
+        if (this.state.recording || this.state.listening) {
           this.recorder.stop();
         }
-        this.setState({ recording: false });
-        setQuickButtons([{ label: "RECORD", value: 1 }]);
+        this.setState({ recording: false, listening: false });
+        setQuickButtons([
+          { label: "RECORD", value: 1 },
+          { label: "LISTEN", value: 2 },
+        ]);
         break;
       // value === 1: "record" button clicked
       case 1:
@@ -265,55 +299,102 @@ class App extends React.Component {
             audio: true,
           });
 
-          this.recorder = new MediaRecorder(stream);
-          this.recorder.start();
+          this.audioChunks = [];
 
+          // recorder event handlers
+          this.recorder = new MediaRecorder(stream);
+          this.recorder.addEventListener("dataavailable", (event) => {
+            this.audioChunks.push(event.data);
+          });
+          this.recorder.addEventListener("stop", this.handleRecorderStopped);
+
+          // change button style
           this.setState({ recording: true });
           setQuickButtons([{ label: "STOP", value: 0 }]);
           document.getElementsByClassName("quick-button")[0].className =
             "quick-button bd-red";
 
-          // collect audio data into chunk
-          this.audioChunks = [];
-          this.recorder.addEventListener("dataavailable", (event) => {
-            this.audioChunks.push(event.data);
-          });
-
-          // do something when recorder is stopped
-          this.recorder.addEventListener("stop", this.handleRecorderStopped);
+          this.recorder.start();
         } else {
           this.setState({ recording: false });
-          setQuickButtons([{ label: "RECORD", value: 1 }]);
+          setQuickButtons([
+            { label: "RECORD", value: 1 },
+            { label: "LISTEN", value: 2 },
+          ]);
+        }
+        break;
+      // value === 2: "listen" button clicked
+      case 2:
+        // if not listening, start to listen voice
+        if (!this.state.listening) {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+          });
+
+          this.audioChunks = [];
+
+          // recorder event handlers
+          this.recorder = new MediaRecorder(stream);
+          this.recorder.addEventListener(
+            "dataavailable",
+            this.handleListenerDataAvailable
+          );
+          this.recorder.addEventListener("stop", this.handleListenerStopped);
+
+          // start websocket connection
+          this.ws = new WebSocket(WS_URL);
+          let that = this;
+          this.ws.onopen = () => {
+            console.log("Websocket successfully opened.");
+
+            that.setState({ listening: true });
+            setQuickButtons([{ label: "STOP", value: 0 }]);
+            document.getElementsByClassName("quick-button")[0].className =
+              "quick-button bd-red";
+
+            that.recorder.start(1000);
+          };
+          this.ws.onmessage = (event) => {
+            console.log(event.data);
+          };
+          this.ws.onerror = (event) => {
+            console.log(event.data);
+          };
+          this.ws.onclose = () => {
+            console.log("Websocket closed.");
+          };
+        } else {
+          this.setState({ listening: false });
+          setQuickButtons([
+            { label: "RECORD", value: 1 },
+            { label: "LISTEN", value: 2 },
+          ]);
         }
         break;
       // error handling, should never reach here
       default:
-        this.setState({ recording: false });
-        setQuickButtons([{ label: "RECORD", value: 1 }]);
+        this.setState({ recording: false, listening: false });
+        setQuickButtons([
+          { label: "RECORD", value: 1 },
+          { label: "LISTEN", value: 2 },
+        ]);
         break;
     }
   };
 
   componentDidMount() {
     toggleWidget();
-    // this.renderAudioMessage(MUSIC_URL);
-    // addResponseMessage("Hello, this is rasa bot");
-    setQuickButtons([{ label: "RECORD", value: 1 }]);
 
-    // renderCustomComponent(
-    //   MixedComponent,
-    //   { text: "hello", src: MUSIC_URL },
-    //   true
-    // );
-    // this.renderMusicPlayer();
+    setQuickButtons([
+      { label: "RECORD", value: 1 },
+      { label: "LISTEN", value: 2 },
+    ]);
+
     renderCustomComponent(
       MixedComponent,
       { text: "你好！有什么可以帮到你吗？" },
       true
     );
-    // setTimeout(() => {
-    //   this.playPlaylist();
-    // }, 2000);
   }
 
   render() {
